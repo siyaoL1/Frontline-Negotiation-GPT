@@ -37,6 +37,30 @@ interface AuthSetup {
     };
 }
 
+// Default auth setup to use in development mode
+const defaultAuthSetup: AuthSetup = {
+    useLogin: true,
+    msalConfig: {
+        auth: {
+            clientId: "00000000-0000-0000-0000-000000000000",
+            authority: "https://login.microsoftonline.com/00000000-0000-0000-0000-000000000000",
+            redirectUri: window.location.origin,
+            postLogoutRedirectUri: window.location.origin,
+            navigateToLoginRequestUrl: false
+        },
+        cache: {
+            cacheLocation: "sessionStorage",
+            storeAuthStateInCookie: false
+        }
+    },
+    loginRequest: {
+        scopes: ["openid", "profile", "email"]
+    },
+    tokenRequest: {
+        scopes: ["api://00000000-0000-0000-0000-000000000000/access_as_user"]
+    }
+};
+
 // Fetch the auth setup JSON data from the API if not already cached
 async function fetchAuthSetup(): Promise<AuthSetup> {
     const response = await fetch("/auth_setup");
@@ -46,9 +70,20 @@ async function fetchAuthSetup(): Promise<AuthSetup> {
     return await response.json();
 }
 
-const authSetup = await fetchAuthSetup();
+// Check if we are in development mode
+const isDev = import.meta.env.MODE === "development";
 
-export const useLogin = authSetup.useLogin;
+// Load the auth setup depending on whether we are in development mode
+let authSetup: AuthSetup;
+if (isDev) {
+    console.log("Dev mode... Using default auth setup.");
+    authSetup = defaultAuthSetup;
+} else {
+    authSetup = await fetchAuthSetup();
+}
+
+// TODO: Remove this hard-coded value after demo
+export const useLogin = true;
 
 /**
  * Configuration object to be passed to MSAL instance on creation.

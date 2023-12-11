@@ -13,9 +13,13 @@ import { UserChatMessage } from "../../components/UserChatMessage";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import { SettingsButton } from "../../components/SettingsButton";
 import { ClearChatButton } from "../../components/ClearChatButton";
+import { SaveChatButton } from "../../components/SaveChatButton";
 import { useLogin, getToken } from "../../authConfig";
 import { useMsal } from "@azure/msal-react";
 import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
+import { HelperButtons } from "../../components/HelperButtons";
+import { RequestType } from "../../api";
+import { Button } from "react-bootstrap";
 
 const Chat = () => {
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
@@ -89,7 +93,7 @@ const Chat = () => {
 
     const client = useLogin ? useMsal().instance : undefined;
 
-    const makeApiRequest = async (question: string) => {
+    const makeApiRequest = async (question: string, requestType: RequestType = "question", requestContent: string = "placeholder") => {
         lastQuestionRef.current = question;
 
         error && setError(undefined);
@@ -104,9 +108,35 @@ const Chat = () => {
                 { content: a[0], role: "user" },
                 { content: a[1].choices[0].message.content, role: "assistant" }
             ]);
+            let prompt = "";
+            let content: string = "";
+            switch (requestType) {
+                case "question":
+                    prompt = "This is a question aside from the ongoing negotiation case, so please answer this question directly.";
+                    content = prompt + question;
+                    break;
+                case "upload_background":
+                    prompt =
+                        'This is a piece of background information about the negotiation. I request that you wait until all background and additional information have been provided before generating the island of agreement. In the meantime, please respond with "Received the background information. You may proceed to provide more information or request to generate the Island of Agreement."';
+                    content = prompt + requestContent;
+                    break;
+                case "upload_additional":
+                    prompt =
+                        'This is a piece of additional information about the negotiation. I request that you wait until all background and additional information have been provided before generating the island of agreement. In the meantime, please respond with "Received the additional information. You may proceed to provide more information or request to generate the Island of Agreement."';
+                    content = prompt + requestContent;
+                    break;
+                case "generate_iog":
+                    content =
+                        "Based on the above definition about the island of agreement and the example, " +
+                        "generate an Island of Agreement Table in tabular format which displays contested facts, agreed facts, " +
+                        "convergent norms, and divergent norms among different stakeholders in the negotiation process. " +
+                        "For each category, list the items in the order of importance.";
+                    break;
+            }
+            console.log("content: " + content);
 
             const request: ChatAppRequest = {
-                messages: [...messages, { content: question, role: "user" }],
+                messages: [...messages, { content: content, role: "user" }],
                 stream: shouldStream,
                 context: {
                     overrides: {
@@ -155,6 +185,11 @@ const Chat = () => {
         setStreamedAnswers([]);
         setIsLoading(false);
         setIsStreaming(false);
+    };
+
+    const saveChat = () => {
+        // save messages to backend server
+        // bring to chat session history page
     };
 
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [isLoading]);
@@ -229,16 +264,17 @@ const Chat = () => {
         <div className={styles.container}>
             <div className={styles.commandsContainer}>
                 <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading} />
+                <SaveChatButton className={styles.commandButton} onClick={saveChat} disabled={isLoading} />
                 {/* Consider comment out this line */}
-                {/* <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} /> */}
+                {/* <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />*/}
             </div>
             <div className={styles.chatRoot}>
                 <div className={styles.chatContainer}>
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
                             <SparkleFilled fontSize={"120px"} primaryFill={"rgba(115, 118, 225, 1)"} aria-hidden="true" aria-label="Chat logo" />
-                            <h1 className={styles.chatEmptyStateTitle}>Chat with your data</h1>
-                            <h2 className={styles.chatEmptyStateSubtitle}>Ask anything or try an example</h2>
+                            <h1 className={styles.chatEmptyStateTitle}>Island of Agreement Assistant</h1>
+                            <h2 className={styles.chatEmptyStateSubtitle}>Ask anything or provide an negotiation case</h2>
                             <ExampleList onExampleClicked={onExampleClicked} />
                         </div>
                     ) : (
@@ -302,6 +338,7 @@ const Chat = () => {
                     )}
 
                     <div className={styles.chatInput}>
+                        <HelperButtons onRequest={(question, requestType) => makeApiRequest(question, requestType)} />
                         <QuestionInput
                             clearOnSend
                             placeholder="Type a new question (e.g. does my plan cover annual eye exams?)"
