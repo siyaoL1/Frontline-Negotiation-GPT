@@ -51,13 +51,17 @@ However, if you find a setting that you do want to make permanent, there are two
 1. Change the defaults in the frontend. You'll find the defaults in `Chat.tsx` and `OneShot.tsx` (for Ask). For example, this line of code sets the default retrieval mode to Hybrid:
 
 ```typescript
-const [retrievalMode, setRetrievalMode] = useState<RetrievalMode>(RetrievalMode.Hybrid);
+const [retrievalMode, setRetrievalMode] = useState<RetrievalMode>(
+  RetrievalMode.Hybrid,
+);
 ```
 
 You can change the default to Text by changing the code to:
 
 ```typescript
-const [retrievalMode, setRetrievalMode] = useState<RetrievalMode>(RetrievalMode.Text);
+const [retrievalMode, setRetrievalMode] = useState<RetrievalMode>(
+  RetrievalMode.Text,
+);
 ```
 
 2. Change the overrides in the backend. Each of the approaches has a `run` method that takes a `context` parameter, and the first line of code extracts the overrides from that `context`. That's where you can override any of the settings. For example, to change the retrieval mode to text:

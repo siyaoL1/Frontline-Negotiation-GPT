@@ -68,7 +68,7 @@
     "embeddingDeploymentName": {
       "value": "${AZURE_OPENAI_EMB_DEPLOYMENT=embedding}"
     },
-    "openAiHost":{
+    "openAiHost": {
       "value": "${OPENAI_HOST=azure}"
     },
     "openAiApiKey": {

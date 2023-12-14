@@ -2,17 +2,17 @@ name: Frontend linting
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-    prettier:
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - name: Run prettier on frontend
-              run: |
-                cd ./app/frontend
-                npm install
-                npx prettier --check .
+  prettier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run prettier on frontend
+        run: |
+          cd ./app/frontend
+          npm install
+          npx prettier --check .

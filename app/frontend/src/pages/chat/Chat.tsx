@@ -341,7 +341,7 @@ const Chat = () => {
                         <HelperButtons onRequest={(question, requestType) => makeApiRequest(question, requestType)} />
                         <QuestionInput
                             clearOnSend
-                            placeholder="Type a new question (e.g. does my plan cover annual eye exams?)"
+                            placeholder="Type a new question (e.g. What is the Island of Agreement?)"
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                         />
