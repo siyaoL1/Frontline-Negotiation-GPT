@@ -151,3 +151,6 @@ data/*.md5
 .DS_Store
 
 secrets/
+app/chatweb/
+app/backend/vectorstores/
+app/backend/websites/

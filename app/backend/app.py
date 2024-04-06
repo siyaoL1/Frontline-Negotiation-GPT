@@ -26,6 +26,10 @@ from langchain_community.vectorstores import FAISS
 from langchain.llms import OpenAI
 from langchain.retrievers import ContextualCompressionRetriever
 from langchain.retrievers.document_compressors import LLMChainExtractor
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
+
+
 import datetime
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
@@ -236,24 +240,9 @@ def scraping(index_url):
 
     # Scrape each subpage for information
     dataframe = scrape_subpages(subpage_links)
-
     return dataframe
     
 def preprocess(data_path):
-    def openai_setup(secret_path: str):
-        """
-        Load OpenAI API key from the secrets file
-        """
-        with open(secret_path) as f:
-            secrets = json.load(f)
-
-        os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
-        openai.api_key = os.environ['OPENAI_API_KEY']
-
-    openai_setup('./secrets/openai_secret.json')
-
-    # os.environ['OPENAI_API_KEY'] = 'xxx'
-    # openai.api_key = os.environ['OPENAI_API_KEY']
     df = pd.read_csv(data_path)
     docs_ls = []
     for i in range(len(df)):
@@ -278,32 +267,73 @@ def preprocess(data_path):
 
     return vectordb
 
+
+def openai_setup(secret_path: str):
+    """
+    Load OpenAI API key from the secrets file
+    """
+    with open(secret_path) as f:
+        secrets = json.load(f)
+    os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
+    openai.api_key = os.environ['OPENAI_API_KEY']
+
+# OpenAI setup
+openai_setup('./secrets/openai_secret.json')
+
+# Load vector database
+persist_directory = './vectorstores/chroma/'
+embedding = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vectordb = Chroma(persist_directory=persist_directory, embedding_function=embedding)
+
+# Load OpenAI model
+llm_name = "gpt-3.5-turbo"
+llm = ChatOpenAI(model_name=llm_name, temperature=0)
+memory = ConversationBufferMemory(
+    memory_key="chat_history",
+    return_messages=True
+)
+
+# Load retrieval QA model
+retriever=vectordb.as_retriever()
+qa = ConversationalRetrievalChain.from_llm(
+    llm,
+    retriever=retriever,
+    memory=memory
+)
+
+
 @bp.before_app_serving
 async def setup_clients():
     print("Init backend")
+
+    # NOTE: chatbot initialization is done outside to keep it a global variable.
+
+    # # Data scraping
     # dataframe = scraping('https://www.harvard.edu')
     # dataframe.to_csv('scraped_data.csv', index=False)
-    # TODO: Issue here: is vectordb indeed updated?
-    vectordb = preprocess('scraped_data.csv')
+
+    # # Data preprocess
+    # vectordb = preprocess('./websites/scraped_data.csv')
+
     
 @bp.route("/chat", methods=["POST"])
 async def chat():
     print("Received chat post request")
-    current_date = datetime.datetime.now().date()
-    if current_date < datetime.date(2023, 9, 2):
-        llm_name = "gpt-3.5-turbo-0301"
-    else:
-        llm_name = "gpt-3.5-turbo"
-    llm = ChatOpenAI(model_name=llm_name, temperature=0)
-    qa_chain = RetrievalQA.from_chain_type(
-        llm,
-        # TODO: Linked with the above issue.
-        retriever=vectordb.as_retriever()
-        )
-    question = "What is Harvard?"
-    result = qa_chain({"query": question})
-    print(result["result"])
-    return {}
+
+    # Get data from the request
+    data = await request.get_json()
+    query = data["messages"][0]["content"]
+    result = qa({"question": query})
+
+    # # Debug
+    # print("request:", data)
+    # print("response:", result)
+    
+    answer = {
+        "answer": result["answer"]
+    }
+    return jsonify(answer)
+
 
 def create_app():
     app = Quart(__name__)
