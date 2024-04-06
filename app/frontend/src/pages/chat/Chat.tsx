@@ -113,7 +113,7 @@ const Chat = () => {
             switch (requestType) {
                 case "question":
                     prompt = "This is a question aside from the ongoing negotiation case, so please answer this question directly.";
-                    content = prompt + question;
+                    content = question;
                     break;
                 case "upload_background":
                     prompt =
