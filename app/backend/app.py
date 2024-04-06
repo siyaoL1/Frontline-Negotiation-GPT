@@ -7,6 +7,10 @@ import time
 from pathlib import Path
 from typing import AsyncGenerator
 
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+    
 import aiohttp
 import openai
 from azure.core.exceptions import ResourceNotFoundError
@@ -51,6 +55,7 @@ bp = Blueprint("routes", __name__, static_folder="static")
 mimetypes.add_type("application/javascript", ".js")
 mimetypes.add_type("text/css", ".css")
 
+dataframe = None
 
 @bp.route("/")
 async def index():
@@ -173,6 +178,56 @@ def auth_setup():
 @bp.before_app_serving
 async def setup_clients():
     print("Init backend")
+
+    def scraping(index_url):
+        def fetch_page(url):
+            try:
+                response = requests.get(url)
+                response.raise_for_status()  # Raises an HTTPError if the response was an error
+                return response.text
+            except requests.exceptions.RequestException as e:
+                print(e)
+                return None
+
+        def parse_links(html, base_url):
+            soup = BeautifulSoup(html, 'html.parser')
+            links = [base_url + a['href'] for a in soup.find_all('a', href=True)]
+            print(links)
+            return links
+
+        def extract_information(html):
+            return str(html)
+
+        def scrape_subpages(links):
+            data = []
+            for link in links:
+                print("Fetching:", link)
+                html = fetch_page(link)
+                if html:
+                    # Your parsing logic here, e.g., find specific information within the subpage
+                    # print(html[:200])
+                    print("Html get **************")
+                    info = extract_information(html)  # Implement this function based on your needs
+                    data.append({'URL': link, 'Information': info})
+            return pd.DataFrame(data)
+
+        # Start by fetching the index page
+        # index_url = 'https://www.harvard.edu'
+        index_html = fetch_page(index_url)
+
+        # Assume the base URL is known (for appending to relative links)
+        base_url = ''
+
+        # Parse the index page to find links to subpages
+        subpage_links = parse_links(index_html, base_url)
+
+        # Scrape each subpage for information
+        dataframe = scrape_subpages(subpage_links)
+
+        return dataframe
+
+    dataframe = scraping('https://www.harvard.edu')
+    dataframe.to_csv('scraped_data.csv', index=False)
 
 
 def create_app():
