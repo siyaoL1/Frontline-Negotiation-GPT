@@ -250,7 +250,7 @@ def preprocess(data_path):
         os.environ['OPENAI_API_KEY'] = secrets['OPENAI_API_KEY']
         openai.api_key = os.environ['OPENAI_API_KEY']
 
-    openai_setup('../secrets/openai_secret.json')
+    openai_setup('./secrets/openai_secret.json')
 
     # os.environ['OPENAI_API_KEY'] = 'xxx'
     # openai.api_key = os.environ['OPENAI_API_KEY']
@@ -281,8 +281,8 @@ def preprocess(data_path):
 @bp.before_app_serving
 async def setup_clients():
     print("Init backend")
-    dataframe = scraping('https://www.harvard.edu')
-    dataframe.to_csv('scraped_data.csv', index=False)
+    # dataframe = scraping('https://www.harvard.edu')
+    # dataframe.to_csv('scraped_data.csv', index=False)
     # TODO: Issue here: is vectordb indeed updated?
     vectordb = preprocess('scraped_data.csv')
     
