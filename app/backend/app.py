@@ -3,7 +3,7 @@ import json
 import logging
 import mimetypes
 import os
-import time
+import re
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -14,7 +14,6 @@ import pandas as pd
 # Data preprocess
 import os
 import openai
-import sys
 from langchain.text_splitter import RecursiveCharacterTextSplitter, CharacterTextSplitter
 from langchain_community.document_loaders import UnstructuredHTMLLoader
 import pandas as pd
@@ -29,12 +28,9 @@ from langchain.retrievers.document_compressors import LLMChainExtractor
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 
-
-import datetime
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
 #Inference
-import datetime
 from langchain.chat_models import ChatOpenAI
 from langchain.chains import RetrievalQA
     
@@ -267,6 +263,31 @@ def preprocess(data_path):
 
     return vectordb
 
+def get_all_source_url(result):
+    def get_source_url(source_documents):
+        source_str = source_documents.metadata['source']
+        pattern = r'/(?P<number>\d+)\.html'
+
+        # Use re.search to find the pattern in the string
+        match = re.search(pattern, source_str)
+
+        # Check if a match is found
+        if match:
+            # Extract the number using group() method
+            extracted_number = match.group('number')
+            url = df.iloc[int(extracted_number)].loc['URL']
+            return url
+        else:
+            print("No match found.")
+            return None
+        
+    source_urls = set()
+    df = pd.read_csv('websites/scraped_data.csv')
+    for i in result["source_documents"]:
+        source_url = get_source_url(i)
+        source_urls.add(source_url)
+    return source_urls
+
 
 def openai_setup(secret_path: str):
     """
@@ -295,10 +316,10 @@ memory = ConversationBufferMemory(
 
 # Load retrieval QA model
 retriever=vectordb.as_retriever()
-qa = ConversationalRetrievalChain.from_llm(
+qa_chain = RetrievalQA.from_chain_type(
     llm,
-    retriever=retriever,
-    memory=memory
+    retriever=vectordb.as_retriever(),
+    return_source_documents=True,
 )
 
 
@@ -323,14 +344,17 @@ async def chat():
     # Get data from the request
     data = await request.get_json()
     query = data["messages"][0]["content"]
-    result = qa({"question": query})
+    result = qa_chain({"query": query})
+    reference = get_all_source_url(result)
 
     # # Debug
     # print("request:", data)
     # print("response:", result)
+    # print("reference:", reference)
     
     answer = {
-        "answer": result["answer"]
+        "answer": result["result"],
+        "reference": list(reference)
     }
     return jsonify(answer)
 
