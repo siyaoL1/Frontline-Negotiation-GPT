@@ -147,6 +147,7 @@ async def format_as_ndjson(r: AsyncGenerator[dict, None]) -> AsyncGenerator[str,
 @bp.route("/chat", methods=["POST"])
 async def chat():
     print("Received chat post request")
+    return jsonify({"error": "request must be json"}), 415
 
     # if not request.is_json:
     #     return jsonify({"error": "request must be json"}), 415
@@ -169,7 +170,7 @@ async def chat():
     #         response.timeout = None  # type: ignore
     #         return response
     # except Exception as error:
-    #     return error_response(error, "/chat")
+        # return error_response(error, "/chat")
 
 
 # Send MSAL.js settings to the client UI
