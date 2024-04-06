@@ -1,4 +1,4 @@
-const BACKEND_URI = "";
+const BACKEND_URI = "http://localhost:50505";
 
 import { ChatAppResponse, ChatAppResponseOrError, ChatAppRequest } from "./models";
 import { useLogin } from "../authConfig";
