@@ -277,7 +277,7 @@ const Chat = () => {
                     )}
 
                     <div className={styles.chatInput}>
-                        <HelperButtons onRequest={(question, requestType) => makeApiRequest(question, requestType)} />
+                        {/* <HelperButtons onRequest={(question, requestType) => makeApiRequest(question, requestType)} /> */}
                         <QuestionInput
                             clearOnSend
                             placeholder="Type a new question (e.g. What is Harvard?)"

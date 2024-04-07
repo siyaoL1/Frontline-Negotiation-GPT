@@ -9,16 +9,16 @@ export type ExampleModel = {
 
 const EXAMPLES: ExampleModel[] = [
     {
-        text: "What is frontline negotiation?",
-        value: "What is frontline negotiation?"
+        text: "What is Harvard?",
+        value: "What is Harvard?"
     },
     {
-        text: "What is the Island of Agreement?",
-        value: "What is the Island of Agreement?"
+        text: "When was Harvard founded?",
+        value: "When was Harvard founded?"
     },
     {
-        text: "Why is Island of Agreement important for frontline negotitation?",
-        value: "Why is Island of Agreement important for frontline negotitation?"
+        text: "What is the time for JFK Jr. Forum?",
+        value: "What is the time for JFK Jr. Forum?"
     }
 ];
 
