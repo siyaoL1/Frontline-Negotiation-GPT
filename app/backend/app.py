@@ -346,17 +346,22 @@ async def chat():
     query = data["messages"][0]["content"]
     result = qa_chain({"query": query})
     reference = get_all_source_url(result)
+    reference = list(reference)
 
     # # Debug
     # print("request:", data)
     # print("response:", result)
     # print("reference:", reference)
+
+    # Concatenate the response and reference
+    answer = result["result"]
+    answer = answer + "\n\nReference: "
+    for i, ref in enumerate(reference[:2]):
+        answer = answer + "\n[{}] ".format(i+1) + ref
     
     answer = {
-        "answer": result["result"],
-        "reference": list(reference)
+        "answer": answer
     }
-    print(answer)
     return jsonify(answer)
 
 
