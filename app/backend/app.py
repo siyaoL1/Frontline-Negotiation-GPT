@@ -329,11 +329,11 @@ async def setup_clients():
 
     # NOTE: chatbot initialization is done outside to keep it a global variable.
 
-    # # Data scraping
+    # Data scraping
     # dataframe = scraping('https://www.harvard.edu')
     # dataframe.to_csv('scraped_data.csv', index=False)
 
-    # # Data preprocess
+    # Data preprocess
     # vectordb = preprocess('./websites/scraped_data.csv')
 
     
