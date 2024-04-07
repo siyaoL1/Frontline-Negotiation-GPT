@@ -7,6 +7,7 @@ import styles from "./Chat.module.css";
 
 import { chatApi, RetrievalMode, ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, ResponseMessage } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
+import { NewAnswer } from "../../components/NewAnswer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example";
 import { UserChatMessage } from "../../components/UserChatMessage";
@@ -46,7 +47,7 @@ const Chat = () => {
 
     const [selectedAnswer, setSelectedAnswer] = useState<number>(0);
     const [answers, setAnswers] = useState<[user: string, response: ChatAppResponse][]>([]);
-    const [streamedAnswers, setStreamedAnswers] = useState<[user: string, response: ChatAppResponse][]>([]);
+    const [streamedAnswers, setStreamedAnswers] = useState<[user: string, response: string][]>([]);
 
     const handleAsyncRequest = async (question: string, answers: [string, ChatAppResponse][], setAnswers: Function, responseBody: ReadableStream<any>) => {
         let answer: string = "";
@@ -56,8 +57,8 @@ const Chat = () => {
             return new Promise(resolve => {
                 setTimeout(() => {
                     answer += newContent;
+                    console.log(JSON.stringify(askResponse));
                     const latestResponse: ChatAppResponse = {
-                        ...askResponse,
                         choices: [{ ...askResponse.choices[0], message: { content: answer, role: askResponse.choices[0].message.role } }]
                     };
                     setStreamedAnswers([...answers, [question, latestResponse]]);
@@ -68,6 +69,9 @@ const Chat = () => {
         try {
             setIsStreaming(true);
             for await (const event of readNDJSONStream(responseBody)) {
+                console.log(console.log("event is " + JSON.stringify(event)));
+                setIsLoading(false);
+                await updateState(event["answer"]);
                 if (event["choices"] && event["choices"][0]["context"] && event["choices"][0]["context"]["data_points"]) {
                     event["choices"][0]["message"] = event["choices"][0]["delta"];
                     askResponse = event;
@@ -113,7 +117,7 @@ const Chat = () => {
             switch (requestType) {
                 case "question":
                     prompt = "This is a question aside from the ongoing negotiation case, so please answer this question directly.";
-                    content = prompt + question;
+                    content = question;
                     break;
                 case "upload_background":
                     prompt =
@@ -284,7 +288,8 @@ const Chat = () => {
                                     <div key={index}>
                                         <UserChatMessage message={streamedAnswer[0]} />
                                         <div className={styles.chatMessageGpt}>
-                                            <Answer
+                                            <NewAnswer answer={streamedAnswer[1]}></NewAnswer>
+                                            {/* <Answer
                                                 isStreaming={true}
                                                 key={index}
                                                 answer={streamedAnswer[1]}
@@ -294,7 +299,7 @@ const Chat = () => {
                                                 onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
-                                            />
+                                            /> */}
                                         </div>
                                     </div>
                                 ))}
