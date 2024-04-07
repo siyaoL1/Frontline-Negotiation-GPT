@@ -313,6 +313,7 @@ memory = ConversationBufferMemory(
     memory_key="chat_history",
     return_messages=True
 )
+memory.output_key = "result"
 
 # Load retrieval QA model
 retriever=vectordb.as_retriever()
@@ -320,8 +321,10 @@ qa_chain = RetrievalQA.from_chain_type(
     llm,
     retriever=vectordb.as_retriever(),
     return_source_documents=True,
+    memory=memory
 )
 
+history = ""
 
 @bp.before_app_serving
 async def setup_clients():
@@ -339,12 +342,19 @@ async def setup_clients():
     
 @bp.route("/chat", methods=["POST"])
 async def chat():
+    global history
     print("Received chat post request")
 
     # Get data from the request
     data = await request.get_json()
     query = data["messages"][0]["content"]
-    result = qa_chain({"query": query})
+
+    # Concatenate the query with the history
+    history += "\nQuestion: " + query
+
+    # Run the chatbot
+    result = qa_chain({"query": history})
+    history += "\nAnswer: " + result["result"]
     reference = get_all_source_url(result)
     reference = list(reference)
 
