@@ -33,12 +33,11 @@ export type ResponseContext = {
 export type ResponseChoice = {
     index: number;
     message: ResponseMessage;
-    context: ResponseContext;
-    session_state: any;
 };
 
 export type ChatAppResponseOrError = {
-    choices?: ResponseChoice[];
+    answer?: string;
+    reference?: string[];
     error?: string;
 };
 

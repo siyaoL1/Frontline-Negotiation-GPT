@@ -356,6 +356,7 @@ async def chat():
         "answer": result["result"],
         "reference": list(reference)
     }
+    print(answer)
     return jsonify(answer)
 
 
